@@ -1,0 +1,26 @@
+# =============================================================================
+# UltraBoost .gitignore
+# =============================================================================
+
+# Edge Profile - ignore all runtime files
+# The EdgeProfile directory is created automatically by Edge.ps1
+EdgeProfile/
+
+# Temp files
+*.tmp
+*.log
+nul
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Shortcuts (user-generated)
+*.lnk
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
