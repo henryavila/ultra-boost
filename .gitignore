@@ -2,6 +2,9 @@
 # UltraBoost .gitignore
 # =============================================================================
 
+# User config (copy from config.example.json)
+config.json
+
 # Edge Profile - ignore all runtime files
 # The EdgeProfile directory is created automatically by Edge.ps1
 EdgeProfile/

@@ -7,7 +7,7 @@
     Requires: Common.ps1 to be sourced first.
 
 .NOTES
-    Version: 1.0
+    Version: 1.1
 #>
 
 # ============================================================================

@@ -1,0 +1,34 @@
+# Configuration for actions/labeler
+# Labels PRs based on files changed
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**/*'
+
+chore:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**/*'
+          - '.markdownlint.json'
+          - '.gitignore'
+
+powershell:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.ps1'
+          - '**/*.psm1'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'config.example.json'
+          - '**/*.json'
+          - '!package*.json'
+
+scripts:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.bat'
+          - '**/*.cmd'

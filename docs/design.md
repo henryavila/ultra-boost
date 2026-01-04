@@ -1,129 +1,157 @@
-# UltraBoost v1.0 - Design Document
+# UltraBoost v1.1 - Design Document
 
-**Data:** 2026-01-04
-**Autor:** Claude Code
-**Status:** Implementado
-
----
-
-## Visao Geral
-
-UltraBoost e um utilitario de otimizacao de sistema que libera RAM maxima para tarefas pesadas. Opcionalmente inicia ComfyUI (Main ou Legacy) e Mobile Wrappers com browser otimizado.
+**Date:** 2026-01-04
+**Author:** Claude Code
+**Status:** Implemented
 
 ---
 
-## Arquitetura
+## Overview
 
-### Estrutura de Arquivos
+UltraBoost is a system optimization utility that frees maximum RAM for heavy workloads. It optionally starts configured apps and opens an optimized browser.
 
-```
+---
+
+## Architecture
+
+### File Structure
+
+```text
 UltraBoost/
-+-- UltraBoost.bat            # Entry point (cria task, roda script)
-+-- UltraBoost.ps1            # Script principal (elevado)
-+-- Edge.bat                  # Abre Edge otimizado (standalone)
-+-- Edge.ps1                  # Logica do Edge standalone
-+-- Rocket-3d.ico             # Icone Microsoft Fluent 3D
++-- config.json               # User configuration (gitignored)
++-- config.example.json       # Example with all fields
++-- UltraBoost.bat            # Entry point (creates task, runs script)
++-- UltraBoost.ps1            # Main script (elevated)
++-- Edge.bat                  # Opens optimized Edge (standalone)
++-- Edge.ps1                  # Edge standalone logic
++-- Rocket-3d.ico             # Microsoft Fluent 3D icon
 |
-+-- EdgeProfile/              # Perfil isolado do Edge (criado no 1o uso, .gitignore)
++-- EdgeProfile/              # Isolated Edge profile (created on first use, gitignored)
 |
 +-- lib/
-    +-- Common.ps1            # Configuracoes, whitelists, helpers
-    +-- Boost.ps1             # Logica ULTRA BOOST
-    +-- Menu.ps1              # Menu interativo com setas
-    +-- Watcher.ps1           # Abre Edge nao-elevado (background)
+    +-- Common.ps1            # Config loader, whitelists, helpers
+    +-- Boost.ps1             # ULTRA BOOST logic
+    +-- Menu.ps1              # Interactive arrow-key menu
+    +-- Watcher.ps1           # Opens Edge non-elevated (background)
 ```
 
 ---
 
-## Fluxo Principal
+## Main Flow
 
-```
+```text
 +-------------------------------------------------------------+
-|                    ULTRABOOST v1.0                          |
+|                    ULTRABOOST v1.1                          |
 +-------------------------------------------------------------+
 |                                                             |
-|  1. Usuario executa UltraBoost.bat (via atalho elevado)     |
+|  1. User runs UltraBoost.bat (via elevated shortcut)        |
 |                        |                                    |
 |                        v                                    |
-|  2. schtasks /create Watcher com /rl LIMITED                |
-|     (cria task que roda NAO-ELEVADA)                        |
+|  2. schtasks /create Watcher with /rl LIMITED               |
+|     (creates task that runs NON-ELEVATED)                   |
 |                        |                                    |
 |                        v                                    |
-|  3. schtasks /run (inicia Watcher em background)            |
+|  3. schtasks /run (starts Watcher in background)            |
 |                        |                                    |
 |                        v                                    |
-|  4. powershell UltraBoost.ps1 (elevado)                     |
+|  4. powershell UltraBoost.ps1 (elevated)                    |
 |     +---------------------------------------------+         |
-|     |  * Exibe MENU INTERATIVO                    |         |
-|     |  * Executa ULTRA BOOST                      |         |
-|     |  * Inicia ComfyUI (se selecionado)          |         |
-|     |  * Inicia Wrappers (se selecionados)        |         |
-|     |  * Escreve URLs em %TEMP%\..._urls.txt      |         |
+|     |  * Shows INTERACTIVE MENU                   |         |
+|     |  * Executes ULTRA BOOST                     |         |
+|     |  * Starts App (if selected)                 |         |
+|     |  * Starts Extras (if selected)              |         |
+|     |  * Writes URLs to %TEMP%\..._urls.txt       |         |
 |     +---------------------------------------------+         |
 |                        |                                    |
 |                        v                                    |
-|  5. Watcher.ps1 detecta arquivo de URLs                     |
-|     (rodando NAO-ELEVADO via Task Scheduler)                |
+|  5. Watcher.ps1 detects URL file                            |
+|     (running NON-ELEVATED via Task Scheduler)               |
 |                        |                                    |
 |                        v                                    |
-|  6. Watcher abre Edge.bat para cada URL                     |
-|     (Edge roda NAO-ELEVADO, sem conflito)                   |
+|  6. Watcher opens Edge.bat for each URL                     |
+|     (Edge runs NON-ELEVATED, no conflict)                   |
 |                        |                                    |
 |                        v                                    |
-|  7. schtasks /delete (limpa task temporaria)                |
+|  7. schtasks /delete (cleans up temporary task)             |
 |                        |                                    |
 |                        v                                    |
-|  8. FIM - Exibe resumo                                      |
+|  8. END - Shows summary                                     |
 |                                                             |
 +-------------------------------------------------------------+
 ```
 
 ---
 
-## Menu Interativo
+## Interactive Menu
 
-### Controles
+### Controls
 
-| Tecla | Acao |
-|-------|------|
-| `Up` `Down` | Navega dentro da secao atual |
-| `Tab` | Alterna entre secoes |
-| `Espaco` | Toggle checkbox |
-| `Enter` | Confirma e executa |
-| `Esc` | Cancela (escreve CANCEL para Watcher sair) |
+| Key | Action |
+|-----|--------|
+| `Up` `Down` | Navigate within current section |
+| `Tab` | Switch between sections |
+| `Space` | Toggle checkbox / select radio |
+| `Enter` | Confirm and execute |
+| `Esc` | Cancel (writes CANCEL for Watcher to exit) |
 
-### Valores Padrao
+### Sections
 
-| Item | Padrao |
-|------|--------|
-| Aplicacao | ComfyUI Main (selecionado) |
-| ComfyUIMini | Desmarcado |
-| ViewComfy | Desmarcado |
-| MobileClient | Desmarcado |
+1. **Apps** - Radio buttons, one selection
+2. **Extras** - Checkboxes, multiple selections
+3. **URLs** - Checkboxes, additional URLs to open
 
 ---
 
-## Edge.bat Standalone
+## Configuration (config.json)
 
-### Fluxo
-
+```json
+{
+  "apps": [...],
+  "extras": [...],
+  "urls": [...],
+  "browser": { "defaultUrl": "..." },
+  "whitelist": {
+    "extraProcesses": [...],
+    "extraServices": [...]
+  }
+}
 ```
-Edge.bat "url"  ------>  Abre URL direto
+
+### App/Extra Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Display name |
+| `path` | string | Directory path |
+| `command` | string | Start command |
+| `url` | string | URL to open |
+| `waitForUrl` | bool | Wait for URL before continuing |
+| `requiresApp` | bool | (extras) Requires app running |
+| `default` | bool | Pre-selected in menu |
+
+---
+
+## Edge Standalone
+
+### Flow
+
+```text
+Edge.bat "url"  ------>  Opens URL directly
 
 Edge.bat        ------>  Prompt: "URL (Enter = Google): "
                             |
-                            +-- Digitou URL -> Abre URL
-                            +-- Enter vazio -> Abre Google
+                            +-- Typed URL -> Opens URL
+                            +-- Empty Enter -> Opens Google
 ```
 
-### Configuracoes do Edge (App Mode)
+### Edge Configuration (App Mode)
 
 ```powershell
 $EdgeArgs = @(
     "--app=$Url",
     "--user-data-dir=`"$EdgeProfilePath`"",
 
-    # Desabilita bloatware do Edge
+    # Disables Edge bloatware
     "--disable-features=msEdgeSidebarV2,msEdgeDiscoverAndRelatedContent,
      msEdgeShopping,msEdgeCollections,msEdgeLiveCaptions,EdgeDesktopUpdates",
 
@@ -135,7 +163,7 @@ $EdgeArgs = @(
     "--renderer-process-limit=2",
     "--js-flags=--max-old-space-size=512",
 
-    # Limpo
+    # Clean
     "--no-first-run",
     "--disable-notifications",
     "--disable-translate"
@@ -144,149 +172,49 @@ $EdgeArgs = @(
 
 ---
 
-## Configuracoes (Common.ps1)
+## Boost Steps
 
-| Variavel | Valor |
-|----------|-------|
-| `$ComfyUIMain` | `C:\ComfyUI\main` |
-| `$ComfyUILegacy` | `C:\ComfyUI\legacy` |
-| `$ComfyUIUrl` | `http://127.0.0.1:8188` |
-| `$DefaultBrowserUrl` | `https://www.google.com` |
-| `$ComfyUIMiniPath` | `C:\ComfyUI\wrappers\ComfyUIMini` |
-| `$ComfyUIMiniUrl` | `http://127.0.0.1:3100` |
-| `$ViewComfyPath` | `C:\ComfyUI\wrappers\ViewComfy` |
-| `$ViewComfyUrl` | `http://127.0.0.1:3000` |
-| `$MobileClientUrl` | `http://127.0.0.1:8188/extensions/ComfyUI-MobileClient/index.html` |
+| Order | Action | Details |
+|-------|--------|---------|
+| 1 | Disable scheduled tasks | Prevents process respawn |
+| 2 | Stop non-essential services | Except whitelist |
+| 3 | Kill non-essential processes | Except whitelist |
+| 4 | Set Python HIGH priority | If running |
+| 5 | Clear standby memory | RAMMap technique (ntdll.dll) |
+| 6 | Report | Shows freed RAM |
 
 ---
 
-## Whitelist de Processos
+## Whitelists
 
-```powershell
-$script:WhitelistProcesses = @(
-    # ComfyUI / Python
-    "python", "python3", "pythonw", "python*",
+### Base Process Whitelist
 
-    # NVIDIA GPU (critico para CUDA)
-    "nvcontainer", "nvidia*", "NVDisplay*", "NVIDIA*", "nvsphelper*",
+- Python, NVIDIA, AMD GPU drivers
+- Windows Core (System, svchost, dwm, csrss, etc.)
+- Windows Shell (explorer, ShellExperienceHost, etc.)
+- Terminals (powershell, cmd, WindowsTerminal)
+- Browsers (msedge)
+- Remote Desktop (JumpDesktop)
+- Bluetooth processes
+- Logitech input
 
-    # AMD GPU / CPU (Ryzen 9950X3D)
-    "atiesrxx", "atieclxx", "amd*", "AMD*", "Radeon*",
+### Base Service Whitelist
 
-    # Windows Core (CRITICO)
-    "System", "Idle", "smss", "csrss", "wininit", "winlogon", "services",
-    "lsass", "lsaiso", "svchost", "dwm", "fontdrvhost", "Memory Compression",
-    "Registry", "Secure System", "System Interrupts", "vmmem",
-    "spoolsv", "wuauclt", "TrustedInstaller", "WmiPrvSE", "dllhost",
-    "msdtc", "SecurityHealthService", "MsMpEng", "NisSrv",
+- GPU services (NVIDIA, AMD)
+- Windows Core (Schedule, CryptSvc, RpcSs, etc.)
+- Networking (Dnscache, Dhcp, BFE, etc.)
+- Audio (AudioSrv)
+- Remote Desktop
+- Bluetooth services
+- HID services
 
-    # Windows Shell & Explorer (CRITICO)
-    "explorer", "explorer.exe",
-    "ShellExperienceHost", "StartMenuExperienceHost",
-    "SearchHost", "SearchApp", "SearchIndexer", "SearchProtocolHost",
-    "RuntimeBroker", "ApplicationFrameHost", "SystemSettings",
-    "TextInputHost", "ctfmon", "sihost", "taskhostw", "backgroundTaskHost",
-    "SettingSyncHost", "smartscreen", "UserOOBEBroker",
+### User Extensions
 
-    # Terminais & Consoles (CRITICO)
-    "powershell", "pwsh", "cmd", "conhost",
-    "WindowsTerminal", "OpenConsole", "wt",
+Users add their own via `config.json`:
 
-    # Browser (para interface web)
-    "msedge", "msedge.exe", "msedgewebview2",
-
-    # Claude Code (CLI)
-    "claude", "claude.exe",
-
-    # Warp Terminal
-    "warp", "warp.exe", "warp-*", "Warp", "WarpSvc", "CloudflareWARP",
-
-    # Remote Desktop (Jump Desktop)
-    "JumpConnect", "JumpDesktop", "JumpClient",
-
-    # Input Devices (Logitech)
-    "LogiOptionsMgr", "Logi*",
-
-    # Node.js (Claude Code, wrappers)
-    "node", "node.exe",
-
-    # Bluetooth (CRITICO para teclado/mouse wireless)
-    "*bluetooth*", "*Bluetooth*",
-    "bthudtask", "fsquirt",
-    "BTStackServer", "BTTray",
-    "ibtsiva", "ibttskex", "BTHSAmpPalService", "BTHSSecurityMgr",
-    "RtkBtManServ", "RtkAudioService64"
-)
+```json
+"whitelist": {
+  "extraProcesses": ["myapp", "node"],
+  "extraServices": ["MyService"]
+}
 ```
-
----
-
-## Whitelist de Servicos
-
-```powershell
-$script:WhitelistServices = @(
-    # NVIDIA GPU
-    "NVDisplay.ContainerLocalSystem", "NvContainerLocalSystem",
-    "nvagent", "NvTelemetryContainer", "NvContainerNetworkService",
-
-    # AMD CPU (Ryzen 9950X3D - 3D V-Cache)
-    "amd3dvcacheSvc", "AMD Crash Defender Service",
-    "AMD External Events Utility", "AmdPpkgSvc", "AmdAppCompatSvc",
-
-    # Windows Core
-    "Schedule", "CryptSvc", "KeyIso", "SamSs", "VaultSvc",
-    "SecurityHealthService", "WinDefend", "WdNisSvc",
-    "DcomLaunch", "RpcSs", "RpcEptMapper", "LSM", "ProfSvc",
-    "UserManager", "Appinfo", "Power", "PlugPlay", "EventLog",
-    "Winmgmt", "SENS", "SystemEventsBroker", "TimeBrokerSvc",
-
-    # Windows Shell
-    "ShellHWDetection", "Themes", "UxSms", "TabletInputService",
-    "TokenBroker", "StateRepository", "StorSvc",
-
-    # Networking
-    "Dnscache", "nlasvc", "netprofm", "nsi", "Dhcp",
-    "LanmanServer", "LanmanWorkstation", "Wcmsvc", "BFE", "mpssvc",
-
-    # Audio
-    "AudioEndpointBuilder", "Audiosrv", "AudioSrv",
-
-    # Remote Desktop
-    "JumpConnect", "JumpDesktopService",
-    "TermService", "SessionEnv", "UmRdpService",
-
-    # Bluetooth (CRITICO)
-    "bthserv", "BTAGService", "BthHFSrv", "BthA2dp",
-    "BluetoothUserService_*", "BluetoothSupportService",
-    "DeviceAssociationService", "DeviceAssociationBrokerSvc_*",
-    "DevicesFlowUserSvc_*", "DevQueryBroker", "DsSvc",
-    "ibtsiva", "IntelAudioService",
-    "RtkBtManServ", "RtkAudioUniversalService",
-
-    # HID (teclados, mice)
-    "hidserv", "HidServ"
-)
-```
-
----
-
-## Etapas do Boost
-
-| Ordem | Acao | Detalhes |
-|-------|------|----------|
-| 1 | Desabilitar scheduled tasks | Previne respawn de processos |
-| 2 | Parar servicos nao-essenciais | Exceto whitelist |
-| 3 | Matar processos nao-essenciais | Exceto whitelist |
-| 4 | Definir Python HIGH priority | Se estiver rodando |
-| 5 | Limpar memoria standby | Tecnica RAMMap (ntdll.dll) |
-| 6 | Relatorio | Exibe RAM liberada |
-
----
-
-## Mobile Wrappers
-
-| Wrapper | Path | Start Command | URL | Requisito |
-|---------|------|---------------|-----|-----------|
-| ComfyUIMini | `wrappers\ComfyUIMini` | `.\scripts\start.bat` | `:3100` | Nenhum |
-| ViewComfy | `wrappers\ViewComfy` | `npm run dev` | `:3000` | Node.js |
-| MobileClient | N/A (extensao) | N/A | `:8188/extensions/...` | ComfyUI rodando |

@@ -1,178 +1,198 @@
-# UltraBoost v1.0
+# UltraBoost v1.1
 
-Sistema de otimizacao que libera RAM maxima para tarefas pesadas. Opcionalmente inicia ComfyUI (Main ou Legacy) e Mobile Wrappers.
+System optimization utility that frees maximum RAM for heavy workloads. Configurable via JSON for any application.
 
-## Instalacao
+## Installation
 
 ```cmd
-git clone https://github.com/SEU_USUARIO/UltraBoost.git
+git clone https://github.com/YOUR_USERNAME/UltraBoost.git
 cd UltraBoost
+copy config.example.json config.json
 ```
 
-## Uso
+Edit `config.json` with your settings before running.
 
-**Via atalho (criar manualmente):**
-- Crie um atalho para `UltraBoost.bat`
-- Propriedades > Avancado > Executar como administrador
+## Usage
 
-**Via linha de comando (admin):**
+**Via shortcut (create manually):**
+
+- Create a shortcut to `UltraBoost.bat`
+- Properties > Advanced > Run as administrator
+
+**Via command line (admin):**
+
 ```cmd
 UltraBoost.bat
 ```
 
-## Menu Interativo
+## Configuration
 
+Edit `config.json` to customize:
+
+```json
+{
+  "apps": [
+    {
+      "name": "My App",
+      "path": "C:\\Path\\To\\App",
+      "command": "start.bat",
+      "url": "http://127.0.0.1:8080",
+      "waitForUrl": true,
+      "default": true
+    }
+  ],
+
+  "extras": [
+    {
+      "name": "Extra Tool",
+      "path": "C:\\Path\\To\\Extra",
+      "command": "run.bat",
+      "url": "http://127.0.0.1:3000",
+      "default": false
+    }
+  ],
+
+  "urls": [
+    {
+      "name": "Documentation",
+      "url": "https://docs.example.com",
+      "default": false
+    }
+  ],
+
+  "browser": {
+    "defaultUrl": "https://www.google.com"
+  },
+
+  "whitelist": {
+    "extraProcesses": ["myapp", "otherapp"],
+    "extraServices": ["MyService"]
+  }
+}
 ```
+
+### Config Sections
+
+| Section | Description |
+|---------|-------------|
+| `apps` | Main applications (radio - one at a time) |
+| `extras` | Optional tools (checkbox - multiple) |
+| `urls` | Additional URLs to open (checkbox - multiple) |
+| `browser` | Standalone Edge configuration |
+| `whitelist` | Extra processes/services to protect |
+
+### Apps/Extras Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Display name in menu |
+| `path` | string | Application directory |
+| `command` | string | Start command (relative to path) |
+| `url` | string | URL to open in browser |
+| `waitForUrl` | bool | Wait for URL to respond before continuing |
+| `requiresApp` | bool | (extras) Requires app running |
+| `default` | bool | Selected by default in menu |
+
+### Default Behavior
+
+- `apps`: First item with `"default": true` is selected. If none, selects "Boost Only"
+- `extras`/`urls`: Each item with `"default": true` is checked
+- If multiple apps have `"default": true`, only the first one counts
+
+## Interactive Menu
+
+```text
 ==============================================================
-                    ULTRABOOST v1.0
+                    ULTRABOOST v1.1
 ==============================================================
 
-  Iniciar aplicacao:
-  -----------------------------------------
-  > ComfyUI Main
-    ComfyUI Legacy
-    Apenas Boost (nao iniciar)
+  Start application:                    <- Tab
+  ----------------------------------------
+  (*) ComfyUI Main
+  ( ) ComfyUI Legacy
+  ( ) Boost Only
 
-  Mobile Wrappers (opcional):
-  -----------------------------------------
-  [ ] ComfyUIMini    (:3100)
-  [ ] ViewComfy      (:3000)
-  [ ] MobileClient   (requer ComfyUI)
+  Extras:                               <- Tab
+  ----------------------------------------
+  [ ] ComfyUIMini
+  [ ] ViewComfy
+  [ ] MobileClient (requires app)
 
-  [Setas] Navegar  [Tab] Secao  [Espaco] Toggle  [Enter] Confirmar
+  Additional URLs:                      <- Tab
+  ----------------------------------------
+  [ ] ComfyUI Course
+  [ ] Documentation
+
+  ----------------------------------------
+  [Arrows] Navigate  [Tab] Section  [Space] Toggle  [Enter] Confirm
 ==============================================================
 ```
 
-### Controles
+### Controls
 
-| Tecla | Acao |
-|-------|------|
-| `Up` `Down` | Navega dentro da secao |
-| `Tab` | Alterna entre secoes |
-| `Espaco` | Toggle checkbox |
-| `Enter` | Confirma e executa |
-| `Esc` | Cancela |
+| Key | Action |
+|-----|--------|
+| `Up` `Down` | Navigate within section |
+| `Tab` | Switch between sections |
+| `Space` | Toggle/select item |
+| `Enter` | Confirm and execute |
+| `Esc` | Cancel |
 
-## O que o Boost faz
+## What the Boost Does
 
-1. **Desabilita scheduled tasks** - Previne respawn de processos
-2. **Para servicos nao-essenciais** - Exceto whitelist
-3. **Mata processos nao-essenciais** - Exceto whitelist
-4. **Define Python como HIGH priority**
-5. **Limpa memoria standby** - Tecnica RAMMap (ntdll.dll)
+1. **Disables scheduled tasks** - Prevents process respawn
+2. **Stops non-essential services** - Except whitelist
+3. **Kills non-essential processes** - Except whitelist
+4. **Sets Python to HIGH priority**
+5. **Clears standby memory** - RAMMap technique (ntdll.dll)
 
-## Arquitetura de Elevacao
-
-O UltraBoost usa uma arquitetura especial para abrir Edge sem elevacao:
-
-```
-UltraBoost.bat (elevado via atalho)
-    |
-    +---> schtasks /create ... /rl LIMITED
-    |         |
-    |         v
-    +---> schtasks /run
-    |         |
-    |         v
-    |    Watcher.ps1 (NAO-ELEVADO via Task Scheduler)
-    |         |
-    |         v aguarda URLs em %TEMP%\ultraboost_urls.txt
-    |
-    +---> UltraBoost.ps1 (elevado)
-              |
-              v
-         Boost, ComfyUI, escreve URLs
-              |
-    +---------+
-    v
-Watcher detecta URLs
-    |
-    v
-Edge.bat -> msedge.exe (NAO-ELEVADO)
-```
-
-Isso evita o erro "Edge nao esta respondendo pois uma instancia existente esta sendo executada com privilegios elevados".
-
-## Edge Otimizado (Standalone)
+## Optimized Edge (Standalone)
 
 ```cmd
-Edge.bat                      # Pergunta URL (padrao: Google)
-Edge.bat "https://url.com"    # Abre URL direto
+Edge.bat                      # Prompts for URL (default: Google)
+Edge.bat "https://url.com"    # Opens URL directly
 ```
 
-- Modo app (sem barra de enderecos)
-- Perfil isolado em `EdgeProfile\` (criado automaticamente)
-- 30+ flags de otimizacao
-- Limite de 512MB JS heap
-- Roda nao-elevado (sem conflito de privilegios)
+- App mode (no address bar)
+- Isolated profile in `EdgeProfile\`
+- 30+ optimization flags
+- 512MB JS heap limit
 
-## Estrutura de Arquivos
+## File Structure
 
-```
+```text
 UltraBoost/
-+-- UltraBoost.bat        # Entry point (cria task nao-elevada, depois roda script)
-+-- UltraBoost.ps1        # Script principal (elevado)
-+-- Edge.bat              # Browser standalone
-+-- Edge.ps1              # Logica do browser
-+-- Rocket-3d.ico         # Icone
-+-- EdgeProfile/          # Perfil isolado do Edge (criado automaticamente, .gitignore)
-+-- docs/                 # Documentacao
++-- config.json           # Your configuration (gitignored)
++-- config.example.json   # Example with all fields documented
++-- UltraBoost.bat        # Entry point
++-- UltraBoost.ps1        # Main script
++-- Edge.bat              # Standalone browser
++-- Edge.ps1              # Browser logic
++-- Rocket-3d.ico         # Icon
 +-- lib/
-    +-- Common.ps1        # Config, whitelists, helpers
-    +-- Menu.ps1          # Menu interativo
-    +-- Boost.ps1         # Logica do boost
-    +-- Watcher.ps1       # Abre Edge nao-elevado (background)
+    +-- Common.ps1        # Config loader, whitelists, helpers
+    +-- Menu.ps1          # Dynamic interactive menu
+    +-- Boost.ps1         # Boost logic
+    +-- Watcher.ps1       # Opens Edge non-elevated
 ```
 
-## Whitelist (Processos Protegidos)
+## Base Whitelist
 
-| Categoria | Exemplos |
-|-----------|----------|
-| Python/ComfyUI | python, pythonw |
-| GPU | nvidia*, amd*, Radeon* |
-| Windows Core | svchost, dwm, explorer, csrss |
-| Windows Shell | ShellExperienceHost, SearchHost, RuntimeBroker |
-| Terminais | powershell, cmd, WindowsTerminal, Warp |
-| Browsers | msedge, msedgewebview2 |
-| Dev Tools | claude, node |
-| Remote | JumpDesktop, TermService |
-| Input | Logi*, hidserv |
-| **Bluetooth** | *bluetooth*, BTStackServer, bthudtask, Intel/Realtek BT |
+UltraBoost automatically protects critical processes. Use `whitelist.extraProcesses` and `whitelist.extraServices` in config.json to add your own.
 
-## Whitelist (Servicos Protegidos)
+**Protected processes:** Python, NVIDIA, AMD, Windows Core, Explorer, Terminals, Browsers, Bluetooth, Logitech, Jump Desktop
 
-| Categoria | Exemplos |
-|-----------|----------|
-| GPU | NVDisplay*, nvagent, amd* |
-| Windows Core | Schedule, CryptSvc, RpcSs, EventLog |
-| Rede | Dnscache, Dhcp, BFE, mpssvc |
-| Audio | AudioSrv, AudioEndpointBuilder |
-| Remote | JumpConnect, TermService |
-| **Bluetooth** | bthserv, BTAGService, BluetoothUserService_*, DeviceAssociationService |
-| HID | hidserv |
+**Protected services:** GPU drivers, Windows Core, Networking, Audio, Remote Desktop, Bluetooth, HID
 
-## Recuperacao
+## Recovery
 
-Apos o boost, para restaurar o sistema ao normal:
-- **Reinicie o computador**
+After boost, to restore the system to normal:
 
-## Troubleshooting
-
-| Problema | Solucao |
-|----------|---------|
-| Edge nao abre automaticamente | Execute manualmente: `Edge.bat "http://127.0.0.1:8188"` |
-| Bluetooth parou | Reinicie o computador |
-| Claude Code encerrado | Nao deve mais ocorrer (Node.js protegido) |
-
-## Configuracao
-
-Edite `lib\Common.ps1` para:
-- Alterar paths do ComfyUI
-- Adicionar processos/servicos a whitelist
-- Modificar URLs dos wrappers
+- **Restart your computer**
 
 ## Changelog
 
-| Versao | Mudancas |
-|--------|----------|
-| 1.0 | Release inicial no GitHub. Boost sempre executa. ComfyUI opcional. Mobile wrappers. Menu interativo. Edge standalone. Bluetooth protegido. |
+| Version | Changes |
+|---------|---------|
+| 1.1 | JSON configuration system. Dynamic apps/extras/URLs. Menu with 3 sections. |
+| 1.0 | Initial GitHub release. |
