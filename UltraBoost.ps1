@@ -6,13 +6,13 @@
     All-in-one system optimizer:
     1. Interactive menu to configure options
     2. Frees maximum system resources (ULTRA BOOST)
-    3. Optionally starts ComfyUI (Main or Legacy)
-    4. Optionally starts Mobile Wrappers
-    5. Opens optimized browser for each service
+    3. Optionally starts configured apps
+    4. Optionally starts configured extras
+    5. Opens configured URLs in optimized browser
 
 .NOTES
     Author: Claude Code
-    Version: 1.0
+    Version: 1.1
     To restore after boost: Restart your computer
 #>
 
@@ -49,132 +49,155 @@ Write-Header "EXECUTING ULTRA BOOST..."
 $memFreed = Invoke-UltraBoost
 
 # ============================================================================
-# START COMFYUI (if selected)
+# START APP (if selected)
 # ============================================================================
 
-$comfyStarted = $false
+$appStarted = $false
+$appUrl = $null
 
-if ($selection.App -ne 2) {
-    # 0 = Main, 1 = Legacy
-    $comfyPath = if ($selection.App -eq 0) { $script:ComfyUIMain } else { $script:ComfyUILegacy }
-    $comfyBat = Join-Path $comfyPath "run_nvidia_gpu.bat"
-    $comfyName = if ($selection.App -eq 0) { "Main" } else { "Legacy" }
+if ($selection.App) {
+    $app = $selection.App
+    Write-Header "STARTING $($app.name.ToUpper())..."
 
-    Write-Header "STARTING COMFYUI ($comfyName)..."
-
-    if (Test-ComfyUIRunning) {
-        Write-OK "ComfyUI is already running"
-        $comfyStarted = $true
+    # Check if already running
+    if ($app.url -and (Test-UrlRunning -Url $app.url)) {
+        Write-OK "$($app.name) is already running"
+        $appStarted = $true
+        $appUrl = $app.url
     } else {
-        Write-Info "Starting ComfyUI..."
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$comfyPath`" && `"$comfyBat`"" -WindowStyle Normal
+        # Start the app
+        $appPath = $app.path
+        $appCommand = $app.command
 
-        Write-Info "Waiting for server..."
-        $attempts = 0
-        $maxAttempts = 120
+        if ($appPath -and $appCommand -and (Test-Path $appPath)) {
+            $fullCommand = Join-Path $appPath $appCommand
+            Write-Info "Starting $($app.name)..."
 
-        while ($attempts -lt $maxAttempts) {
-            if (Test-ComfyUIRunning) {
-                Write-Host ""
-                Write-OK "ComfyUI ready!"
+            Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$appPath`" && `"$fullCommand`"" -WindowStyle Normal
 
-                # Set high priority
-                $pythonProcs = Get-Process -Name "python*" -ErrorAction SilentlyContinue
-                foreach ($p in $pythonProcs) {
-                    try { $p.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::High } catch { }
+            # Wait for URL if configured
+            if ($app.waitForUrl -and $app.url) {
+                Write-Info "Waiting for server..."
+                $attempts = 0
+                $maxAttempts = 120
+
+                while ($attempts -lt $maxAttempts) {
+                    if (Test-UrlRunning -Url $app.url) {
+                        Write-Host ""
+                        Write-OK "$($app.name) ready!"
+
+                        # Set high priority for python
+                        $pythonProcs = Get-Process -Name "python*" -ErrorAction SilentlyContinue
+                        foreach ($p in $pythonProcs) {
+                            try { $p.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::High } catch { }
+                        }
+
+                        $appStarted = $true
+                        $appUrl = $app.url
+                        break
+                    }
+                    Start-Sleep -Seconds 1
+                    $attempts++
+                    if ($attempts % 10 -eq 0) { Write-Host "." -NoNewline }
                 }
 
-                $comfyStarted = $true
-                break
+                if (-not $appStarted) {
+                    Write-Warn "Timeout waiting for $($app.name)"
+                }
+            } else {
+                # No waitForUrl, just assume it started
+                $appStarted = $true
+                $appUrl = $app.url
+                Start-Sleep -Seconds 2
             }
-            Start-Sleep -Seconds 1
-            $attempts++
-            if ($attempts % 10 -eq 0) { Write-Host "." -NoNewline }
-        }
-
-        if (-not $comfyStarted) {
-            Write-Warn "Timeout waiting for ComfyUI"
+        } else {
+            Write-Fail "Path not found: $appPath"
         }
     }
 }
 
 # ============================================================================
-# START MOBILE WRAPPERS (if selected)
+# START EXTRAS (if selected)
+# ============================================================================
+
+$extraUrls = @()
+
+foreach ($extra in $selection.Extras) {
+    # Skip if requires app and app not started
+    if ($extra.requiresApp -and -not $appStarted) {
+        Write-Skip "$($extra.name) skipped (requires app)"
+        continue
+    }
+
+    Write-Header "STARTING $($extra.name.ToUpper())..."
+
+    # If no path/command, it's just a URL (like MobileClient)
+    if (-not $extra.path -or -not $extra.command) {
+        if ($extra.url) {
+            Write-OK "$($extra.name) URL queued"
+            $extraUrls += $extra.url
+        }
+        continue
+    }
+
+    # Start the extra
+    $extraPath = $extra.path
+    $extraCommand = $extra.command
+
+    if (Test-Path $extraPath) {
+        Write-Info "Starting $($extra.name)..."
+
+        # Check if command contains npm/node
+        if ($extraCommand -match "^npm\s") {
+            Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$extraPath`" && $extraCommand" -WindowStyle Normal
+        } else {
+            $fullCommand = Join-Path $extraPath $extraCommand
+            Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$extraPath`" && `"$fullCommand`"" -WindowStyle Normal
+        }
+
+        # Wait for URL if available
+        if ($extra.url) {
+            Write-Info "Waiting for $($extra.name)..."
+            $attempts = 0
+            $maxAttempts = 60
+
+            while ($attempts -lt $maxAttempts) {
+                if (Test-UrlRunning -Url $extra.url) {
+                    Write-OK "$($extra.name) ready!"
+                    $extraUrls += $extra.url
+                    break
+                }
+                Start-Sleep -Seconds 1
+                $attempts++
+            }
+
+            if ($attempts -ge $maxAttempts) {
+                Write-Warn "$($extra.name) may not be ready yet"
+                $extraUrls += $extra.url  # Try anyway
+            }
+        }
+    } else {
+        Write-Fail "Path not found: $extraPath"
+    }
+}
+
+# ============================================================================
+# COLLECT URLS TO OPEN
 # ============================================================================
 
 $urlsToOpen = @()
 
-# ComfyUI browser
-if ($comfyStarted) {
-    $urlsToOpen += $script:ComfyUIUrl
+# App URL
+if ($appStarted -and $appUrl) {
+    $urlsToOpen += $appUrl
 }
 
-# ComfyUIMini
-if ($selection.ComfyUIMini) {
-    Write-Header "STARTING COMFYUIMINI..."
+# Extra URLs
+$urlsToOpen += $extraUrls
 
-    $miniStartBat = Join-Path $script:ComfyUIMiniPath "scripts\start.bat"
-
-    if (Test-Path $miniStartBat) {
-        Write-Info "Starting ComfyUIMini..."
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$script:ComfyUIMiniPath`" && `"$miniStartBat`"" -WindowStyle Normal
-
-        # Wait for it to start
-        Write-Info "Waiting for ComfyUIMini..."
-        $attempts = 0
-        while ($attempts -lt 30) {
-            if (Test-UrlRunning -Url $script:ComfyUIMiniUrl) {
-                Write-OK "ComfyUIMini ready!"
-                $urlsToOpen += $script:ComfyUIMiniUrl
-                break
-            }
-            Start-Sleep -Seconds 1
-            $attempts++
-        }
-
-        if ($attempts -ge 30) {
-            Write-Warn "ComfyUIMini may not be ready yet"
-            $urlsToOpen += $script:ComfyUIMiniUrl  # Try anyway
-        }
-    } else {
-        Write-Fail "ComfyUIMini start script not found: $miniStartBat"
-    }
-}
-
-# ViewComfy
-if ($selection.ViewComfy) {
-    Write-Header "STARTING VIEWCOMFY..."
-
-    if (Test-Path $script:ViewComfyPath) {
-        Write-Info "Starting ViewComfy (npm run dev)..."
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/k", "cd /d `"$script:ViewComfyPath`" && npm run dev" -WindowStyle Normal
-
-        # Wait for it to start
-        Write-Info "Waiting for ViewComfy..."
-        $attempts = 0
-        while ($attempts -lt 60) {
-            if (Test-UrlRunning -Url $script:ViewComfyUrl) {
-                Write-OK "ViewComfy ready!"
-                $urlsToOpen += $script:ViewComfyUrl
-                break
-            }
-            Start-Sleep -Seconds 1
-            $attempts++
-        }
-
-        if ($attempts -ge 60) {
-            Write-Warn "ViewComfy may not be ready yet"
-            $urlsToOpen += $script:ViewComfyUrl  # Try anyway
-        }
-    } else {
-        Write-Fail "ViewComfy path not found: $($script:ViewComfyPath)"
-    }
-}
-
-# MobileClient (no need to start, just open URL)
-if ($selection.MobileClient -and $comfyStarted) {
-    Write-Header "OPENING MOBILECLIENT..."
-    $urlsToOpen += $script:MobileClientUrl
+# Additional URLs from config
+foreach ($urlItem in $selection.Urls) {
+    $urlsToOpen += $urlItem.url
 }
 
 # ============================================================================
@@ -216,20 +239,18 @@ Write-Host "                      ALL READY!                               " -Fo
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 
-if ($comfyStarted) {
-    Write-Host "  ComfyUI: $($script:ComfyUIUrl)" -ForegroundColor White
+if ($appStarted) {
+    Write-Host "  App: $($selection.App.name) - $appUrl" -ForegroundColor White
 }
 
-if ($selection.ComfyUIMini) {
-    Write-Host "  ComfyUIMini: $($script:ComfyUIMiniUrl)" -ForegroundColor White
+foreach ($extra in $selection.Extras) {
+    if ($extra.url) {
+        Write-Host "  Extra: $($extra.name) - $($extra.url)" -ForegroundColor White
+    }
 }
 
-if ($selection.ViewComfy) {
-    Write-Host "  ViewComfy: $($script:ViewComfyUrl)" -ForegroundColor White
-}
-
-if ($selection.MobileClient -and $comfyStarted) {
-    Write-Host "  MobileClient: $($script:MobileClientUrl)" -ForegroundColor White
+foreach ($urlItem in $selection.Urls) {
+    Write-Host "  URL: $($urlItem.name)" -ForegroundColor White
 }
 
 Write-Host ""
@@ -239,3 +260,4 @@ Write-Host ""
 
 # Keep window open briefly
 Start-Sleep -Seconds 5
+

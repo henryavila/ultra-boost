@@ -8,7 +8,7 @@
     If the file is empty or contains "CANCEL", it exits without opening Edge.
 
 .NOTES
-    Version: 1.0
+    Version: 1.1
 #>
 
 $ErrorActionPreference = "SilentlyContinue"

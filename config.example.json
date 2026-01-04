@@ -1,0 +1,86 @@
+{
+  "_comment": "Copy this file to config.json and customize as needed",
+
+  "apps": [
+    {
+      "name": "ComfyUI Main",
+      "path": "C:\\ComfyUI\\main",
+      "command": "run_nvidia_gpu.bat",
+      "url": "http://127.0.0.1:8188",
+      "waitForUrl": true,
+      "default": true
+    },
+    {
+      "name": "ComfyUI Legacy",
+      "path": "C:\\ComfyUI\\legacy",
+      "command": "run_nvidia_gpu.bat",
+      "url": "http://127.0.0.1:8188",
+      "waitForUrl": true,
+      "default": false
+    },
+    {
+      "name": "Stable Diffusion WebUI",
+      "path": "C:\\stable-diffusion-webui",
+      "command": "webui-user.bat",
+      "url": "http://127.0.0.1:7860",
+      "waitForUrl": true,
+      "default": false
+    }
+  ],
+
+  "extras": [
+    {
+      "name": "ComfyUIMini",
+      "path": "C:\\ComfyUI\\wrappers\\ComfyUIMini",
+      "command": "scripts\\start.bat",
+      "url": "http://127.0.0.1:3100",
+      "default": false
+    },
+    {
+      "name": "ViewComfy",
+      "path": "C:\\ComfyUI\\wrappers\\ViewComfy",
+      "command": "npm run dev",
+      "url": "http://127.0.0.1:3000",
+      "default": false
+    },
+    {
+      "name": "MobileClient",
+      "url": "http://127.0.0.1:8188/extensions/ComfyUI-MobileClient/index.html",
+      "requiresApp": true,
+      "default": false
+    }
+  ],
+
+  "urls": [
+    {
+      "name": "ComfyUI Course",
+      "url": "https://example.com/comfyui-course",
+      "default": false
+    },
+    {
+      "name": "Node Documentation",
+      "url": "https://docs.comfy.org",
+      "default": false
+    },
+    {
+      "name": "CivitAI",
+      "url": "https://civitai.com",
+      "default": false
+    }
+  ],
+
+  "browser": {
+    "defaultUrl": "https://www.google.com"
+  },
+
+  "whitelist": {
+    "extraProcesses": [
+      "myapp", "myapp.exe",
+      "node", "node.exe",
+      "code", "Code.exe"
+    ],
+    "extraServices": [
+      "MyCustomService"
+    ]
+  }
+}

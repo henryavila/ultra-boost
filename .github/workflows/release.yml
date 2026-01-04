@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the draft release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update-draft:
+    name: Update Draft Release
+    runs-on: ubuntu-latest
+    # Skip version bump commits
+    if: "!contains(github.event.head_commit.message || '', '[skip ci]')"
+    outputs:
+      id: ${{ steps.drafter.outputs.id }}
+      tag_name: ${{ steps.drafter.outputs.tag_name }}
+      version: ${{ steps.drafter.outputs.resolved_version }}
+      body: ${{ steps.drafter.outputs.body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update draft release
+        id: drafter
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show draft info
+        run: |
+          echo "Draft: ${{ steps.drafter.outputs.name }}"
+          echo "Version: ${{ steps.drafter.outputs.resolved_version }}"
+          echo "Tag: ${{ steps.drafter.outputs.tag_name }}"
+
+  publish:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get draft release
+        id: get-draft
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          latest: true
+
+      - name: Validate draft exists
+        if: steps.get-draft.outputs.id == ''
+        run: |
+          echo "::error::No draft release found. Merge some PRs first!"
+          exit 1
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ steps.get-draft.outputs.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Update version in Common.ps1
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          sed -i "s/UltraBoostVersion = \".*\"/UltraBoostVersion = \"$VERSION\"/" lib/Common.ps1
+          echo "Updated version to $VERSION"
+
+      - name: Create ZIP archive
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          mkdir -p dist
+          zip -r dist/UltraBoost-v${VERSION}.zip \
+            *.bat *.ps1 *.ico *.md \
+            config.example.json \
+            lib/ docs/ \
+            -x ".git/*" \
+            -x ".github/*"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.get-draft.outputs.name }}
+          body: ${{ steps.get-draft.outputs.body }}
+          draft: false
+          files: dist/UltraBoost-v${{ steps.version.outputs.version }}.zip
+
+      - name: Commit version update
+        run: |
+          git add lib/Common.ps1
+          git commit -m "chore: bump version to ${{ steps.version.outputs.tag }} [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+      - name: Delete old draft
+        run: |
+          gh release delete "${{ steps.get-draft.outputs.tag_name }}" --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

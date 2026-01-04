@@ -1,10 +1,9 @@
 @echo off
-:: Edge Optimizado - Standalone Launcher
-:: Abre Edge em modo app com perfil isolado
-:: Nunca fecha instancias existentes
+:: Optimized Edge - Standalone Launcher
+:: Opens Edge in app mode with isolated profile
 ::
-:: Uso:
-::   Edge.bat                      - Pergunta a URL (padrao: Google)
-::   Edge.bat "https://url.com"    - Abre URL diretamente
+:: Usage:
+::   Edge.bat                      - Prompts for URL (default: Google)
+::   Edge.bat "https://url.com"    - Opens URL directly
 
 powershell -ExecutionPolicy Bypass -File "%~dp0Edge.ps1" %*

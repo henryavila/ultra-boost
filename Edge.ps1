@@ -14,7 +14,7 @@
     .\Edge.ps1
 
 .NOTES
-    Version: 1.0
+    Version: 1.1
 #>
 
 param(
@@ -53,7 +53,7 @@ function Write-Fail { param($text) Write-Host "[X] $text" -ForegroundColor Red }
 if (-not $Url) {
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  Edge Optimizado - Modo App" -ForegroundColor Cyan
+    Write-Host "  Optimized Edge - App Mode" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
 
@@ -61,7 +61,7 @@ if (-not $Url) {
 
     if ([string]::IsNullOrWhiteSpace($userInput)) {
         $Url = $DefaultUrl
-        Write-Info "Usando URL padrao: $DefaultUrl"
+        Write-Info "Using default URL: $DefaultUrl"
     } else {
         # Add https:// if no protocol specified
         if ($userInput -notmatch "^https?://") {
@@ -126,7 +126,7 @@ $EdgeArgs = @(
 # START EDGE
 # ============================================================================
 
-Write-Info "Iniciando Edge em modo app..."
+Write-Info "Starting Edge in app mode..."
 Write-Info "URL: $Url"
 
 Start-Process -FilePath $EdgePath -ArgumentList $EdgeArgs
@@ -148,9 +148,9 @@ $newEdge = Get-Process -Name "msedge" -ErrorAction SilentlyContinue | Where-Obje
 
 if ($newEdge) {
     $totalMB = ($newEdge | Measure-Object -Property WorkingSet64 -Sum).Sum / 1MB
-    Write-OK "Edge iniciado ($([math]::Round($totalMB))MB)"
+    Write-OK "Edge started ($([math]::Round($totalMB))MB)"
 } else {
-    Write-Fail "Falha ao iniciar Edge"
+    Write-Fail "Failed to start Edge"
 }
 
 Write-Host ""

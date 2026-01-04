@@ -1,0 +1,55 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  powershell:
+    name: PowerShell Lint
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+          $results = Invoke-ScriptAnalyzer -Path . -Recurse -Settings @{
+            ExcludeRules = @(
+              'PSAvoidUsingWriteHost'      # We use Write-Host for console UI
+              'PSUseShouldProcessForStateChangingFunctions'  # Not needed for this utility
+            )
+          }
+
+          if ($results) {
+            $results | Format-Table -Property RuleName, Severity, ScriptName, Line, Message -AutoSize
+
+            $errors = $results | Where-Object Severity -eq 'Error'
+            if ($errors) {
+              Write-Host "::error::Found $($errors.Count) error(s)"
+              exit 1
+            }
+
+            $warnings = $results | Where-Object Severity -eq 'Warning'
+            if ($warnings) {
+              Write-Host "::warning::Found $($warnings.Count) warning(s)"
+            }
+          } else {
+            Write-Host "No issues found!"
+          }
+
+  json:
+    name: JSON Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating config.example.json..."
+          python3 -m json.tool config.example.json > /dev/null
+          echo "Valid!"

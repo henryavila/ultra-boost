@@ -1,0 +1,112 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+# Initial version when no tags exist
+version-template: '$MAJOR.$MINOR.$PATCH'
+initial-version: '1.1.0'
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'bugfix'
+  - title: '🔧 Maintenance'
+    labels:
+      - 'chore'
+      - 'maintenance'
+      - 'refactor'
+  - title: '📖 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '⬆️ Dependencies'
+    labels:
+      - 'dependencies'
+
+exclude-labels:
+  - 'skip-changelog'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'bugfix'
+      - 'chore'
+      - 'maintenance'
+      - 'documentation'
+      - 'docs'
+      - 'refactor'
+      - 'dependencies'
+  default: patch
+
+autolabeler:
+  - label: 'documentation'
+    files:
+      - '*.md'
+      - 'docs/**/*'
+  - label: 'chore'
+    files:
+      - '.github/**/*'
+  - label: 'bug'
+    branch:
+      - '/fix\/.+/'
+      - '/bug\/.+/'
+      - '/hotfix\/.+/'
+  - label: 'feature'
+    branch:
+      - '/feature\/.+/'
+      - '/feat\/.+/'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+
+no-changes-template: 'No changes since last release.'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ---
+
+  ## Installation
+
+  **Option 1: Download ZIP**
+  1. Download `UltraBoost-v$RESOLVED_VERSION.zip` below
+  2. Extract to desired folder
+  3. Copy `config.example.json` to `config.json`
+  4. Edit `config.json` with your settings
+
+  **Option 2: Clone repository**
+  ```cmd
+  git clone https://github.com/$OWNER/$REPOSITORY.git
+  cd $REPOSITORY
+  copy config.example.json config.json
+  ```
+
+  Then run `UltraBoost.bat` as administrator.
+
+  ## Requirements
+
+  - Windows 10/11
+  - PowerShell 5.1+
+  - Administrator privileges
+  - Microsoft Edge
+
+  ---
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
