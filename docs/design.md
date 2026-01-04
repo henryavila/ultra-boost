@@ -16,7 +16,7 @@ UltraBoost is a system optimization utility that frees maximum RAM for heavy wor
 
 ### File Structure
 
-```
+```text
 UltraBoost/
 +-- config.json               # User configuration (gitignored)
 +-- config.example.json       # Example with all fields
@@ -39,7 +39,7 @@ UltraBoost/
 
 ## Main Flow
 
-```
+```text
 +-------------------------------------------------------------+
 |                    ULTRABOOST v1.1                          |
 +-------------------------------------------------------------+
@@ -135,7 +135,7 @@ UltraBoost/
 
 ### Flow
 
-```
+```text
 Edge.bat "url"  ------>  Opens URL directly
 
 Edge.bat        ------>  Prompt: "URL (Enter = Google): "
@@ -211,6 +211,7 @@ $EdgeArgs = @(
 ### User Extensions
 
 Users add their own via `config.json`:
+
 ```json
 "whitelist": {
   "extraProcesses": ["myapp", "node"],

@@ -15,10 +15,12 @@ Edit `config.json` with your settings before running.
 ## Usage
 
 **Via shortcut (create manually):**
+
 - Create a shortcut to `UltraBoost.bat`
 - Properties > Advanced > Run as administrator
 
 **Via command line (admin):**
+
 ```cmd
 UltraBoost.bat
 ```
@@ -99,7 +101,7 @@ Edit `config.json` to customize:
 
 ## Interactive Menu
 
-```
+```text
 ==============================================================
                     ULTRABOOST v1.1
 ==============================================================
@@ -158,7 +160,7 @@ Edge.bat "https://url.com"    # Opens URL directly
 
 ## File Structure
 
-```
+```text
 UltraBoost/
 +-- config.json           # Your configuration (gitignored)
 +-- config.example.json   # Example with all fields documented
@@ -185,6 +187,7 @@ UltraBoost automatically protects critical processes. Use `whitelist.extraProces
 ## Recovery
 
 After boost, to restore the system to normal:
+
 - **Restart your computer**
 
 ## Changelog

@@ -13,11 +13,6 @@ jobs:
     name: Auto-label PR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Apply labels from release-drafter config
-        uses: release-drafter/release-drafter@v6
+      - uses: actions/labeler@v5
         with:
-          disable-releaser: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
