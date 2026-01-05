@@ -261,6 +261,13 @@ $script:BaseWhitelistServices = @(
     "ibtsiva", "IntelAudioService",
     "RtkBtManServ", "RtkAudioUniversalService",
 
+    # Bluetooth Audio (A2DP/AVCTP - required for wireless headphones)
+    "BthAvctpSvc",              # Audio/Video Control Transport Protocol
+    "CDPSvc", "CDPUserSvc_*",   # Connected Devices Platform (device enumeration)
+    "cbdhsvc_*",                # Clipboard/Device Broker (device communication)
+    "WFDSConMgrSvc",            # Wi-Fi Direct Services (used by some BT devices)
+    "SSDPSRV",                  # SSDP Discovery (device discovery protocol)
+
     # HID
     "hidserv", "HidServ"
 )
