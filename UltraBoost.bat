@@ -11,7 +11,7 @@ setlocal EnableDelayedExpansion
 
 :: Get absolute path to script directory (remove trailing backslash issues)
 set "SCRIPT_DIR=%~dp0"
-set "WATCHER_PATH=%SCRIPT_DIR%lib\Watcher.ps1"
+set "WATCHER_VBS=%SCRIPT_DIR%lib\WatcherLauncher.vbs"
 set "TASK_NAME=UltraBoost_Watcher_%RANDOM%"
 
 :: Delete any leftover URL file from previous runs
@@ -22,7 +22,8 @@ del "%TEMP%\ultraboost_urls.txt" 2>nul
 :: /rl LIMITED - Run with limited (non-elevated) privileges
 :: /sc once /st 00:00 - One time trigger (we'll run it manually)
 :: /f - Force create (overwrite if exists)
-schtasks /create /tn "%TASK_NAME%" /tr "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%WATCHER_PATH%\"" /sc once /st 00:00 /ru "%USERNAME%" /rl LIMITED /f >nul 2>&1
+:: Using wscript.exe with VBS wrapper to ensure truly hidden window
+schtasks /create /tn "%TASK_NAME%" /tr "wscript.exe //nologo \"%WATCHER_VBS%\"" /sc once /st 00:00 /ru "%USERNAME%" /rl LIMITED /f >nul 2>&1
 
 if %ERRORLEVEL% NEQ 0 (
     echo [!] Failed to create watcher task. Edge will run elevated.
